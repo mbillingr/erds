@@ -21,15 +21,17 @@ class Erds(object):
         self: instance of Erds
             Returns the modified instance.
         """
-        X = epochs.mean(axis=0)
-        c, t = X.shape
+        e, c, t = epochs.shape
         self.erds_ = []
         if self.baseline is None:
-            baseline = 0, t  # TODO: baseline cannot range from 0-t, but has
-                             # indices from 0 to n_segments (of STFT)
+            baseline = 0, t
 
         for channel in range(c):
-            stft = self._stft(X[channel, :])
+            stft = []
+            for epoch in range(e):
+                stft.append(self._stft(epochs[epoch, channel, :]))
+            stft = np.stack(stft, axis=-1).mean(axis=-1)
+
             ref = stft[baseline[0]:baseline[1], :].mean(axis=0)
             self.erds_.append(np.transpose(stft / ref - 1))
 
@@ -53,7 +55,7 @@ class Erds(object):
         hop = self.nfft - self.overlap
         n_segments = int(np.ceil(len(x) / hop))
         stft = np.empty((n_segments, self.nfft))
-        x = np.concatenate((x, np.zeros((self.nfft))))
+        x = np.concatenate((x, np.zeros((self.nfft))))  # zero-pad
 
         for k in range(n_segments):
             start = k * hop
@@ -69,8 +71,8 @@ class Erds(object):
         pass
 
 
-a = np.random.randn(100, 64, 2048)
+a = np.random.randn(100, 64, 1024)
 erds = Erds()
 erds.fit(a)
-plt.imshow(erds.erds_[0], origin="lower", aspect="auto")
+plt.imshow(erds.erds_[0], origin="lower", aspect="auto", interpolation="none")
 plt.show()
