@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 class Erds(object):
     def __init__(self, baseline=None):
         self.baseline = baseline  # None means whole epoch
-        self.nfft = 256  # frequency resolution
-        self.overlap = 128  # time resolution
+        self.nfft = 128  # frequency resolution
+        self.nsegments = 32  # number of time points in ERDS map
 
     def fit(self, epochs):
         """Compute ERDS maps.
@@ -51,13 +51,13 @@ class Erds(object):
             STFT of x.
         """
         c, t = x.shape
+        pad = np.zeros((c, self.nfft / 2))  # self.nfft must be a power of 2
+        x = np.concatenate((pad, x, pad), axis=-1)  # zero-pad
+        step = int(t / (self.nsegments - 1))
+        stft = np.empty((self.nsegments, c, self.nfft))
         window = np.hanning(self.nfft)
-        step = self.nfft - self.overlap
-        n_segments = int(np.ceil(t / step))
-        stft = np.empty((n_segments, c, self.nfft))
-        x = np.concatenate((x, np.zeros((c, self.nfft))), axis=-1)  # zero-pad
 
-        for k in range(n_segments):
+        for k in range(self.nsegments):
             start = k * step
             end = start + self.nfft
             windowed = x[:, start:end] * window
@@ -71,7 +71,7 @@ class Erds(object):
         pass
 
 
-a = np.random.randn(100, 64, 1024)
+a = np.random.randn(100, 64, 1000)
 erds = Erds()
 erds.fit(a)
 plt.imshow(erds.erds_[0], origin="lower", aspect="auto", interpolation="none")
