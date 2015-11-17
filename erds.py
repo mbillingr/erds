@@ -26,43 +26,43 @@ class Erds(object):
         if self.baseline is None:
             baseline = 0, t
 
-        for channel in range(c):
-            stft = []
-            for epoch in range(e):
-                stft.append(self._stft(epochs[epoch, channel, :]))
-            stft = np.stack(stft, axis=-1).mean(axis=-1)
+        stft = []
+        for epoch in range(e):
+            stft.append(self._stft(epochs[epoch, :, :]))
+        stft = np.stack(stft, axis=-1).mean(axis=-1)
 
-            ref = stft[baseline[0]:baseline[1], :].mean(axis=0)
-            self.erds_.append(np.transpose(stft / ref - 1))
+        ref = stft[baseline[0]:baseline[1], :, :].mean(axis=0)
+        # split into list of channels
+        self.erds_ = [ch.squeeze().T for ch in np.split(stft / ref - 1, c, 1)]
 
         return self
 
     def _stft(self, x):
-        """Compute Short-Time Fourier Transform (STFT) for single channel.
+        """Compute Short-Time Fourier Transform (STFT).
 
         Parameters
         ----------
-        x : array, shape (n_times,)
-            Data used to compute STFT (single channel).
+        x : array, shape (n_channels, n_times)
+            Data used to compute STFT.
 
         Returns
         -------
-        stft : array, shape (n_segments, n_freqs)
+        stft : array, shape (n_segments, n_channels, n_freqs)
             STFT of x.
         """
-
+        c, t = x.shape
         window = np.hanning(self.nfft)
-        hop = self.nfft - self.overlap
-        n_segments = int(np.ceil(len(x) / hop))
-        stft = np.empty((n_segments, self.nfft))
-        x = np.concatenate((x, np.zeros((self.nfft))))  # zero-pad
+        step = self.nfft - self.overlap
+        n_segments = int(np.ceil(t / step))
+        stft = np.empty((n_segments, c, self.nfft))
+        x = np.concatenate((x, np.zeros((c, self.nfft))), axis=-1)  # zero-pad
 
         for k in range(n_segments):
-            start = k * hop
+            start = k * step
             end = start + self.nfft
-            windowed = x[start:end] * window
+            windowed = x[:, start:end] * window
             spectrum = np.fft.fft(windowed) / self.nfft
-            stft[k, :] = np.abs(spectrum * np.conj(spectrum))
+            stft[k, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
     def plot(self):
