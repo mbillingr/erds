@@ -11,15 +11,15 @@ class Erds(object):
 
     Attributes
     ----------
-    erds_ : array, shape (n_segments, n_channels, n_fft)
+    erds_ : array, shape (n_fft, n_channels, n_segments)
 
     Examples
     --------
     TODO
     """
-    def __init__(self, baseline=None):
-        self.n_fft = 128  # frequency resolution
-        self.n_segments = 32  # number of time points in ERDS map
+    def __init__(self, n_fft=128, n_segments=32, baseline=None):
+        self.n_fft = n_fft  # frequency resolution
+        self.n_segments = n_segments  # number of time points in ERDS map
         self.baseline = baseline
 
     def fit(self, epochs):
@@ -87,10 +87,3 @@ class Erds(object):
         # TODO: plot specified channels
         plt.imshow(self.erds_[:, 0, :], origin="lower", aspect="auto",
                    interpolation="none")
-
-
-a = np.random.randn(100, 64, 1000)
-erds = Erds()
-erds.fit(a)
-erds.plot()
-plt.show()
