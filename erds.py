@@ -33,7 +33,7 @@ class Erds(object):
 
         ref = stft[baseline[0]:baseline[1], :, :].mean(axis=0)
         # split into list of channels
-        self.erds_ = [ch.squeeze().T for ch in np.split(stft / ref - 1, c, 1)]
+        self.erds_ = (stft / ref - 1).transpose(2, 1, 0)
 
         return self
 
@@ -74,5 +74,5 @@ class Erds(object):
 a = np.random.randn(100, 64, 1000)
 erds = Erds()
 erds.fit(a)
-plt.imshow(erds.erds_[0], origin="lower", aspect="auto", interpolation="none")
+plt.imshow(erds.erds_[:, 0, :], origin="lower", aspect="auto", interpolation="none")
 plt.show()
