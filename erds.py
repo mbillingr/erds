@@ -24,7 +24,7 @@ class Erds(object):
         e, c, t = epochs.shape
         self.erds_ = []
         if self.baseline is None:
-            baseline = 0, t
+            baseline = 0, self.nsegments
 
         stft = []
         for epoch in range(e):
