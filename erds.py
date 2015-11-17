@@ -49,7 +49,6 @@ class Erds(object):
         stft = np.stack(stft, axis=-1).mean(axis=-1)
 
         ref = stft[baseline[0]:baseline[1] + 1, :, :].mean(axis=0)
-        # split into list of channels
         self.erds_ = (stft / ref - 1).transpose(2, 1, 0)
 
         return self
