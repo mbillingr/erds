@@ -3,10 +3,24 @@ import matplotlib.pyplot as plt
 
 
 class Erds(object):
+    """ERDS maps
+
+    Parameters
+    ----------
+    TODO
+
+    Attributes
+    ----------
+    erds_ : array, shape (n_segments, n_channels, n_fft)
+
+    Examples
+    --------
+    TODO
+    """
     def __init__(self, baseline=None):
         self.baseline = baseline  # None means whole epoch
-        self.nfft = 128  # frequency resolution
-        self.nsegments = 32  # number of time points in ERDS map
+        self.n_fft = 128  # frequency resolution
+        self.n_segments = 32  # number of time points in ERDS map
 
     def fit(self, epochs):
         """Compute ERDS maps.
@@ -24,7 +38,7 @@ class Erds(object):
         e, c, t = epochs.shape
         self.erds_ = []
         if self.baseline is None:
-            baseline = 0, self.nsegments
+            baseline = 0, self.n_segments
 
         stft = []
         for epoch in range(e):
@@ -51,17 +65,17 @@ class Erds(object):
             STFT of x.
         """
         c, t = x.shape
-        pad = np.zeros((c, self.nfft / 2))  # self.nfft must be a power of 2
+        pad = np.zeros((c, self.n_fft / 2))  # self.nfft must be a power of 2
         x = np.concatenate((pad, x, pad), axis=-1)  # zero-pad
-        step = int(t / (self.nsegments - 1))
-        stft = np.empty((self.nsegments, c, self.nfft))
-        window = np.hanning(self.nfft)
+        step = int(t / (self.n_segments - 1))
+        stft = np.empty((self.n_segments, c, self.n_fft))
+        window = np.hanning(self.n_fft)
 
-        for k in range(self.nsegments):
+        for k in range(self.n_segments):
             start = k * step
-            end = start + self.nfft
+            end = start + self.n_fft
             windowed = x[:, start:end] * window
-            spectrum = np.fft.fft(windowed) / self.nfft
+            spectrum = np.fft.fft(windowed) / self.n_fft
             stft[k, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
