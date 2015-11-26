@@ -38,7 +38,7 @@ class Erds(object):
         if self.baseline is None:
             baseline = np.array([0, self.n_segments])
         else:
-            baseline = np.asarray(self.baseline) // self.n_segments
+            baseline = np.asarray(self.baseline)  # TODO: baseline should be provided in samples? or seconds? now it's in segments.
 
         e, c, t = epochs.shape
         self.erds_ = []
@@ -67,7 +67,7 @@ class Erds(object):
             STFT of x.
         """
         c, t = x.shape
-        pad = np.zeros((c, self.n_fft / 2))  # self.nfft must be a power of 2
+        pad = np.zeros((c, self.n_fft / 2))  # TODO: is this correct for odd self.n_fft?
         x = np.concatenate((pad, x, pad), axis=-1)  # zero-pad
         step = t // (self.n_segments - 1)
         if self.n_fft % 2:  # odd
@@ -76,17 +76,17 @@ class Erds(object):
             stft = np.empty((self.n_segments, c, (self.n_fft / 2) + 1))
         window = np.hanning(self.n_fft)
 
-        for k in range(self.n_segments):
-            start = k * step
+        for segment in range(self.n_segments):
+            start = segment * step
             end = start + self.n_fft
             windowed = x[:, start:end] * window
             spectrum = np.fft.rfft(windowed) / self.n_fft
-            stft[k, :, :] = np.abs(spectrum * np.conj(spectrum))
+            stft[segment, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
-    def plot(self, channels=None):
+    def plot(self, channels=None, f=None):
         """Plot ERDS maps.
         """
         # TODO: plot specified channels
-        plt.imshow(self.erds_[:, 0, :], origin="lower", aspect="auto",
-                   interpolation="none")
+        plt.imshow(self.erds_[:60, 0, :], origin="lower", aspect="auto",
+                   interpolation="none", cmap=plt.get_cmap("jet_r"))
