@@ -70,14 +70,17 @@ class Erds(object):
         pad = np.zeros((c, self.n_fft / 2))  # self.nfft must be a power of 2
         x = np.concatenate((pad, x, pad), axis=-1)  # zero-pad
         step = t // (self.n_segments - 1)
-        stft = np.empty((self.n_segments, c, self.n_fft))
+        if self.n_fft % 2:  # odd
+            stft = np.empty((self.n_segments, c, (self.n_fft + 1) / 2))
+        else:  # even
+            stft = np.empty((self.n_segments, c, (self.n_fft / 2) + 1))
         window = np.hanning(self.n_fft)
 
         for k in range(self.n_segments):
             start = k * step
             end = start + self.n_fft
             windowed = x[:, start:end] * window
-            spectrum = np.fft.fft(windowed) / self.n_fft
+            spectrum = np.fft.rfft(windowed) / self.n_fft
             stft[k, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
