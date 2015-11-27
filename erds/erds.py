@@ -17,10 +17,11 @@ class Erds(object):
     --------
     TODO
     """
-    def __init__(self, n_fft=128, n_segments=32, baseline=None):
-        self.n_fft = n_fft  # frequency resolution
+    def __init__(self, n_fft=128, n_segments=32, baseline=None, fs=None):
+        self.n_fft = n_fft  # frequency bins in ERDS map
         self.n_segments = n_segments  # number of time points in ERDS map
-        self.baseline = baseline
+        self.baseline = baseline  # baseline interval
+        self.fs = fs  # sampling frequency
 
     def fit(self, epochs):
         """Compute ERDS maps.
@@ -70,10 +71,7 @@ class Erds(object):
         pad = np.zeros((c, self.n_fft / 2))  # TODO: is this correct for odd self.n_fft?
         x = np.concatenate((pad, x, pad), axis=-1)  # zero-pad
         step = t // (self.n_segments - 1)
-        if self.n_fft % 2:  # odd
-            stft = np.empty((self.n_segments, c, (self.n_fft + 1) / 2))
-        else:  # even
-            stft = np.empty((self.n_segments, c, (self.n_fft / 2) + 1))
+        stft = np.empty((self.n_segments, c, self.n_fft // 2 + 1))
         window = np.hanning(self.n_fft)
 
         for segment in range(self.n_segments):
