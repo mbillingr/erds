@@ -89,7 +89,7 @@ class Erds(object):
             stft[time, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
-    def plot(self, channels=None, f_min=None, f_max=None):
+    def plot(self, channels=None, f_min=0, f_max=50):  # TODO: t_min, t_max?
         """Plot ERDS maps.
 
         Parameters
@@ -99,5 +99,9 @@ class Erds(object):
             displayed.
         """
         # TODO: plot specified channels
-        plt.imshow(self.erds_[:60, 0, :], origin="lower", aspect="auto",
-                   interpolation="none", cmap=plt.get_cmap("jet_r"))
+        # TODO: check if selection of frequencies is correct
+        c = self.n_freqs/self.fs
+        fig = plt.imshow(self.erds_[f_min * c:f_max * c, 0, :], origin="lower",
+                         aspect="auto", interpolation="none",
+                         cmap=plt.get_cmap("jet_r"),
+                         extent=[0, 8, f_min, f_max])
