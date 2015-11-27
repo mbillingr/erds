@@ -37,6 +37,9 @@ class Erds(object):
             Returns the modified instance.
         """
         e, c, t = epochs.shape
+        self.n_epochs = e
+        self.n_channels_ = c
+        self.n_samples = t
         self.erds_ = []
         self.midpoints_ = np.arange(0, t, t // (self.n_times - 1))
         self.n_fft_ = (self.n_freqs - 1) * 2
@@ -89,7 +92,7 @@ class Erds(object):
             stft[time, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
-    def plot(self, channels=None, f_min=0, f_max=50):  # TODO: t_min, t_max?
+    def plot(self, channels=None, f_min=0, f_max=30, nrows=None, ncols=None):  # TODO: t_min, t_max?
         """Plot ERDS maps.
 
         Parameters
@@ -100,8 +103,19 @@ class Erds(object):
         """
         # TODO: plot specified channels
         # TODO: check if selection of frequencies is correct
-        c = self.n_freqs/self.fs
-        fig = plt.imshow(self.erds_[f_min * c:f_max * c, 0, :], origin="lower",
-                         aspect="auto", interpolation="none",
-                         cmap=plt.get_cmap("jet_r"),
-                         extent=[0, 8, f_min, f_max])
+        if self.fs is not None:
+            c = self.n_freqs/self.fs
+        else:
+            c = 1
+
+        nrows = np.ceil(np.sqrt(self.n_channels_)) if nrows is None else nrows
+        ncols = np.ceil(np.sqrt(self.n_channels_)) if ncols is None else ncols
+
+        for ch in range(self.n_channels_):
+            plt.subplot(nrows, ncols, ch + 1)
+            plt.imshow(self.erds_[f_min * c:f_max * c, ch, :], origin="lower",
+                       aspect="auto", interpolation="none",
+                       cmap=plt.get_cmap("jet_r"), extent=[0, 8, f_min, f_max])
+            plt.title(str(ch + 1))
+        plt.tight_layout(1)
+        # TODO: return figure?
