@@ -11,15 +11,15 @@ class Erds(object):
 
     Attributes
     ----------
-    erds_ : array, shape (n_fft, n_channels, n_segments)
+    erds_ : array, shape (n_freqs, n_channels, n_times)
 
     Examples
     --------
     TODO
     """
-    def __init__(self, n_fft=128, n_segments=32, baseline=None, fs=None):
-        self.n_fft = n_fft  # frequency bins in ERDS map
-        self.n_segments = n_segments  # number of time points in ERDS map
+    def __init__(self, n_times=32, n_freqs=129, baseline=None, fs=None):
+        self.n_times = n_times  # number of time points in ERDS map
+        self.n_freqs = n_freqs  # number of frequency bins in ERDS map
         self.baseline = baseline  # baseline interval
         self.fs = fs  # sampling frequency
 
@@ -28,7 +28,7 @@ class Erds(object):
 
         Parameters
         ----------
-        epochs : array, shape (n_epochs, n_channels, n_times)
+        epochs : array, shape (n_epochs, n_channels, n_samples)
             Data used to compute ERDS maps.
 
         Returns
@@ -37,13 +37,14 @@ class Erds(object):
             Returns the modified instance.
         """
         if self.baseline is None:
-            baseline = np.array([0, self.n_segments])
+            baseline = np.array([0, self.n_times])
         else:
             baseline = np.asarray(self.baseline)  # TODO: baseline should be provided in samples? or seconds? now it's in segments.
 
         e, c, t = epochs.shape
         self.erds_ = []
 
+        self.n_fft_ = (self.n_freqs - 1) * 2
         stft = []
         for epoch in range(e):
             stft.append(self._stft(epochs[epoch, :, :]))
@@ -59,7 +60,7 @@ class Erds(object):
 
         Parameters
         ----------
-        x : array, shape (n_channels, n_times)
+        x : array, shape (n_channels, n_samples)
             Data used to compute STFT.
 
         Returns
@@ -68,17 +69,17 @@ class Erds(object):
             STFT of x.
         """
         c, t = x.shape
-        pad = np.zeros((c, self.n_fft / 2))  # TODO: is this correct for odd self.n_fft?
+        pad = np.zeros((c, self.n_fft_ // 2))
         x = np.concatenate((pad, x, pad), axis=-1)  # zero-pad
-        step = t // (self.n_segments - 1)
-        stft = np.empty((self.n_segments, c, self.n_fft // 2 + 1))
-        window = np.hanning(self.n_fft)
+        step = t // (self.n_times - 1)
+        stft = np.empty((self.n_times, c, self.n_freqs))
+        window = np.hanning(self.n_fft_)
 
-        for segment in range(self.n_segments):
+        for segment in range(self.n_times):
             start = segment * step
-            end = start + self.n_fft
+            end = start + self.n_fft_
             windowed = x[:, start:end] * window
-            spectrum = np.fft.rfft(windowed) / self.n_fft
+            spectrum = np.fft.rfft(windowed) / self.n_fft_
             stft[segment, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
