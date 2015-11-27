@@ -39,6 +39,10 @@ class Erds(object):
         e, c, t = epochs.shape
         self.erds_ = []
         self.midpoints_ = np.arange(0, t, t // (self.n_times - 1))
+        self.n_fft_ = (self.n_freqs - 1) * 2
+
+        if self.fs is not None:
+            self.freqs_ = np.fft.rfftfreq(self.n_fft_) * self.fs
 
         if self.baseline is None:
             self.baseline_ = np.array([0, self.n_times - 1])  # whole epoch
@@ -47,7 +51,6 @@ class Erds(object):
             tmp = [np.abs(self.midpoints_ - v).argmin() for v in self.baseline]
             self.baseline_ = np.asarray(tmp)
 
-        self.n_fft_ = (self.n_freqs - 1) * 2
         stft = []
         for epoch in range(e):
             stft.append(self._stft(epochs[epoch, :, :]))
@@ -86,8 +89,14 @@ class Erds(object):
             stft[time, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
-    def plot(self, channels=None, f=None):
+    def plot(self, channels=None, f_min=None, f_max=None):
         """Plot ERDS maps.
+
+        Parameters
+        ----------
+        channels : array or None
+            Channels to display. If None, ERDS maps for all channels are
+            displayed.
         """
         # TODO: plot specified channels
         plt.imshow(self.erds_[:60, 0, :], origin="lower", aspect="auto",
