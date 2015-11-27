@@ -36,13 +36,16 @@ class Erds(object):
         self: instance of Erds
             Returns the modified instance.
         """
-        if self.baseline is None:
-            baseline = np.array([0, self.n_times])
-        else:
-            baseline = np.asarray(self.baseline)  # TODO: baseline should be provided in samples? or seconds? now it's in segments.
-
         e, c, t = epochs.shape
         self.erds_ = []
+        self.midpoints_ = np.arange(0, t, t // (self.n_times - 1))
+
+        if self.baseline is None:
+            self.baseline_ = np.array([0, self.n_times - 1])  # whole epoch
+        else:
+            # find corresponding closest time segments for baseline
+            tmp = [np.abs(self.midpoints_ - v).argmin() for v in self.baseline]
+            self.baseline_ = np.asarray(tmp)
 
         self.n_fft_ = (self.n_freqs - 1) * 2
         stft = []
@@ -50,7 +53,7 @@ class Erds(object):
             stft.append(self._stft(epochs[epoch, :, :]))
         stft = np.stack(stft, axis=-1).mean(axis=-1)
 
-        ref = stft[baseline[0]:baseline[1] + 1, :, :].mean(axis=0)
+        ref = stft[self.baseline_[0]:self.baseline_[1] + 1, :, :].mean(axis=0)
         self.erds_ = (stft / ref - 1).transpose(2, 1, 0)
 
         return self
@@ -65,7 +68,7 @@ class Erds(object):
 
         Returns
         -------
-        stft : array, shape (n_segments, n_channels, n_freqs)
+        stft : array, shape (n_times, n_channels, n_freqs)
             STFT of x.
         """
         c, t = x.shape
@@ -75,12 +78,12 @@ class Erds(object):
         stft = np.empty((self.n_times, c, self.n_freqs))
         window = np.hanning(self.n_fft_)
 
-        for segment in range(self.n_times):
-            start = segment * step
+        for time in range(self.n_times):
+            start = time * step
             end = start + self.n_fft_
             windowed = x[:, start:end] * window
             spectrum = np.fft.rfft(windowed) / self.n_fft_
-            stft[segment, :, :] = np.abs(spectrum * np.conj(spectrum))
+            stft[time, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
     def plot(self, channels=None, f=None):
