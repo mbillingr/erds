@@ -44,22 +44,22 @@ class Erds(object):
         self.midpoints_ = np.arange(0, t, t // (self.n_times - 1))
         self.n_fft_ = (self.n_freqs - 1) * 2
 
-        if self.fs is not None:
-            self.freqs_ = np.fft.rfftfreq(self.n_fft_) * self.fs
+        # if self.fs is not None:
+        #     self.freqs_ = np.fft.rfftfreq(self.n_fft_) * self.fs
 
         if self.baseline is None:
-            self.baseline_ = np.array([0, self.n_times - 1])  # whole epoch
+            self.baseline_ = np.arange(0, self.n_times)  # whole epoch
         else:
             # find corresponding closest time segments for baseline
             tmp = [np.abs(self.midpoints_ - v).argmin() for v in self.baseline]
-            self.baseline_ = np.asarray(tmp)
+            self.baseline_ = np.arange(*tmp)
 
         stft = []
         for epoch in range(e):
             stft.append(self._stft(epochs[epoch, :, :]))
         stft = np.stack(stft, axis=-1).mean(axis=-1)
 
-        ref = stft[self.baseline_[0]:self.baseline_[1] + 1, :, :].mean(axis=0)
+        ref = stft[self.baseline_, :, :].mean(axis=0)
         self.erds_ = (stft / ref - 1).transpose(2, 1, 0)
 
         return self
@@ -92,7 +92,8 @@ class Erds(object):
             stft[time, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
-    def plot(self, channels=None, f_min=0, f_max=30, nrows=None, ncols=None):  # TODO: t_min, t_max?
+    def plot(self, channels=None, f_min=0, f_max=30, t_min=0, t_max=None,
+             nrows=None, ncols=None):
         """Plot ERDS maps.
 
         Parameters
@@ -102,7 +103,6 @@ class Erds(object):
             displayed.
         """
         # TODO: plot specified channels
-        # TODO: check if selection of frequencies is correct
         if self.fs is not None:
             c = self.n_freqs/self.fs
         else:
