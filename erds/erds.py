@@ -28,14 +28,19 @@ class Erds(object):
         s =  "<Erds object>\n"
         s += "  n_times: {}\n".format(self.n_times)
         s += "  n_freqs: {}\n".format(self.n_freqs)
-        s += "  baseline: {}\n".format(self.baseline)
-        s += "  fs: {}\n".format(self.fs)
+        s += "  baseline: {} s\n".format(self.baseline)
+        s += "  fs: {} Hz\n".format(self.fs)
         if self.erds_ is None:
             s += "  ERDS maps have not been computed (use fit method).\n"
         else:
-            s += "  Data samples: {}\n".format(self.n_samples_)
-            s += "  Data channels: {}\n".format(self.n_channels_)
-            s += "  Data epochs: {}\n".format(self.n_epochs_)
+            s += "  Input data:\n"
+            s += "    length: {} samples\n".format(self.n_samples_)
+            s += "    channels: {}\n".format(self.n_channels_)
+            s += "    epochs: {}\n".format(self.n_epochs_)
+            s += "  ERDS data:\n"
+            s += "    length: {} samples\n".format(self.n_times)
+            s += "    channels: {}\n".format(self.n_channels_)
+            s += "    frequency bins: {}\n".format(self.n_freqs)
 
         return s
 
