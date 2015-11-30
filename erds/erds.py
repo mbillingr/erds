@@ -28,7 +28,10 @@ class Erds(object):
         s =  "<Erds object>\n"
         s += "  n_times: {}\n".format(self.n_times)
         s += "  n_freqs: {}\n".format(self.n_freqs)
-        s += "  baseline: {} s\n".format(self.baseline)
+        if self.baseline is None:
+            s += "  baseline: whole epoch\n".format(self.baseline)
+        else:
+            s += "  baseline: {} s\n".format(self.baseline)
         s += "  fs: {} Hz\n".format(self.fs)
         if self.erds_ is None:
             s += "  ERDS maps have not been computed (use fit method).\n"
@@ -44,7 +47,7 @@ class Erds(object):
 
         return s
 
-    def fit(self, epochs):
+    def fit(self, epochs, fs=None):
         """Compute ERDS maps.
 
         Parameters
@@ -57,15 +60,15 @@ class Erds(object):
         self: instance of Erds
             Returns the modified instance.
         """
+        if fs is not None:
+            self.fs = fs
         e, c, t = epochs.shape
         self.n_epochs_ = e
         self.n_channels_ = c
         self.n_samples_ = t
         self.midpoints_ = np.arange(0, t, t // (self.n_times - 1)) / self.fs
         self.n_fft_ = (self.n_freqs - 1) * 2
-
-        # if self.fs is not None:
-        #     self.freqs_ = np.fft.rfftfreq(self.n_fft_) * self.fs
+        self.freqs_ = np.fft.rfftfreq(self.n_fft_) * self.fs
 
         if self.baseline is None:  # use whole epoch
             self.baseline_ = np.arange(0, self.n_times)
