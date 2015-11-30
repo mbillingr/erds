@@ -22,6 +22,22 @@ class Erds(object):
         self.n_freqs = n_freqs  # number of frequency bins in ERDS map
         self.baseline = baseline  # baseline interval start and end
         self.fs = fs  # sampling frequency
+        self.erds_ = None
+
+    def __repr__(self):
+        s =  "<Erds object>\n"
+        s += "  n_times: {}\n".format(self.n_times)
+        s += "  n_freqs: {}\n".format(self.n_freqs)
+        s += "  baseline: {}\n".format(self.baseline)
+        s += "  fs: {}\n".format(self.fs)
+        if self.erds_ is None:
+            s += "  ERDS maps have not been computed (use fit method).\n"
+        else:
+            s += "  Data samples: {}\n".format(self.n_samples_)
+            s += "  Data channels: {}\n".format(self.n_channels_)
+            s += "  Data epochs: {}\n".format(self.n_epochs_)
+
+        return s
 
     def fit(self, epochs):
         """Compute ERDS maps.
@@ -40,7 +56,6 @@ class Erds(object):
         self.n_epochs_ = e
         self.n_channels_ = c
         self.n_samples_ = t
-        self.erds_ = []
         self.midpoints_ = np.arange(0, t, t // (self.n_times - 1)) / self.fs
         self.n_fft_ = (self.n_freqs - 1) * 2
 
