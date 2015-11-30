@@ -17,10 +17,10 @@ class Erds(object):
     --------
     TODO
     """
-    def __init__(self, n_times=32, n_freqs=129, baseline=None, fs=None):
+    def __init__(self, n_times=128, n_freqs=513, baseline=None, fs=1):
         self.n_times = n_times  # number of time points in ERDS map
         self.n_freqs = n_freqs  # number of frequency bins in ERDS map
-        self.baseline = baseline  # baseline interval
+        self.baseline = baseline  # baseline interval start and end
         self.fs = fs  # sampling frequency
 
     def fit(self, epochs):
@@ -37,20 +37,20 @@ class Erds(object):
             Returns the modified instance.
         """
         e, c, t = epochs.shape
-        self.n_epochs = e
+        self.n_epochs_ = e
         self.n_channels_ = c
-        self.n_samples = t
+        self.n_samples_ = t
         self.erds_ = []
-        self.midpoints_ = np.arange(0, t, t // (self.n_times - 1))
+        self.midpoints_ = np.arange(0, t, t // (self.n_times - 1)) / self.fs
         self.n_fft_ = (self.n_freqs - 1) * 2
 
         # if self.fs is not None:
         #     self.freqs_ = np.fft.rfftfreq(self.n_fft_) * self.fs
 
-        if self.baseline is None:
-            self.baseline_ = np.arange(0, self.n_times)  # whole epoch
+        if self.baseline is None:  # use whole epoch
+            self.baseline_ = np.arange(0, self.n_times)
         else:
-            # find corresponding closest time segments for baseline
+            # find corresponding closest times
             tmp = [np.abs(self.midpoints_ - v).argmin() for v in self.baseline]
             self.baseline_ = np.arange(*tmp)
 
@@ -92,7 +92,7 @@ class Erds(object):
             stft[time, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
-    def plot(self, channels=None, f_min=0, f_max=30, t_min=0, t_max=None,
+    def plot(self, channels=None, f_min=0, f_max=None, t_min=0, t_max=None,
              nrows=None, ncols=None):
         """Plot ERDS maps.
 
@@ -103,10 +103,9 @@ class Erds(object):
             displayed.
         """
         # TODO: plot specified channels
-        if self.fs is not None:
-            c = self.n_freqs/self.fs
-        else:
-            c = 1
+        if f_max is None:
+            f_max = self.fs / 2
+        c = self.n_freqs / (self.fs / 2)
 
         nrows = np.ceil(np.sqrt(self.n_channels_)) if nrows is None else nrows
         ncols = np.ceil(np.sqrt(self.n_channels_)) if ncols is None else ncols
@@ -115,7 +114,8 @@ class Erds(object):
             plt.subplot(nrows, ncols, ch + 1)
             plt.imshow(self.erds_[f_min * c:f_max * c, ch, :], origin="lower",
                        aspect="auto", interpolation="none",
-                       cmap=plt.get_cmap("jet_r"), extent=[0, 8, f_min, f_max])
+                       cmap=plt.get_cmap("jet_r"),
+                       extent=[0, self.n_samples_ / self.fs, f_min, f_max])
             plt.title(str(ch + 1))
         plt.tight_layout(1)
         # TODO: return figure?
