@@ -122,15 +122,16 @@ class Erds(object):
             Channels to display. If None, ERDS maps for all channels are
             displayed.
         """
-        # TODO: plot specified channels
+        if channels is None:
+            channels = range(self.n_channels_)
         f_max = min(f_max, self.fs / 2)
         c = self.n_freqs / (self.fs / 2)
 
         nrows = np.ceil(np.sqrt(self.n_channels_)) if nrows is None else nrows
         ncols = np.ceil(np.sqrt(self.n_channels_)) if ncols is None else ncols
 
-        for ch in range(self.n_channels_):
-            plt.subplot(nrows, ncols, ch + 1)
+        for idx, ch in enumerate(channels):
+            plt.subplot(nrows, ncols, idx + 1)
             plt.imshow(self.erds_[f_min * c:f_max * c, ch, :], origin="lower",
                        aspect="auto", interpolation="none",
                        cmap=plt.get_cmap("jet_r"),
