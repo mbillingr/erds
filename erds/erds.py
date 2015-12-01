@@ -133,6 +133,7 @@ class Erds(object):
         nrows = np.ceil(np.sqrt(self.n_channels_)) if nrows is None else nrows
         ncols = np.ceil(np.sqrt(self.n_channels_)) if ncols is None else ncols
 
+        fig = plt.figure()
         for idx, ch in enumerate(channels):
             plt.subplot(nrows, ncols, idx + 1)
             plt.imshow(self.erds_[f_min * c:f_max * c, ch, :], origin="lower",
@@ -140,5 +141,4 @@ class Erds(object):
                        cmap=plt.get_cmap("jet_r"),
                        extent=[0, self.n_samples_ / self.fs, f_min, f_max])  # FIXME: need to subtract 1 unit from time and freq maximum?
             plt.title(str(ch + 1))
-        plt.tight_layout(1)
-        # TODO: return figure?
+        return fig
