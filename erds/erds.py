@@ -37,13 +37,13 @@ class Erds(object):
             s += "  ERDS maps have not been computed (use fit method).\n"
         else:
             s += "  Input data:\n"
-            s += "    length: {} samples\n".format(self.n_samples_)
-            s += "    channels: {}\n".format(self.n_channels_)
             s += "    epochs: {}\n".format(self.n_epochs_)
-            s += "  ERDS data:\n"
-            s += "    length: {} samples\n".format(self.n_times)
             s += "    channels: {}\n".format(self.n_channels_)
+            s += "    length: {} samples\n".format(self.n_samples_)
+            s += "  ERDS data:\n"
             s += "    frequency bins: {}\n".format(self.n_freqs)
+            s += "    channels: {}\n".format(self.n_channels_)
+            s += "    length: {} samples\n".format(self.n_times)
 
         return s
 
