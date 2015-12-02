@@ -139,6 +139,8 @@ class Erds(object):
             plt.imshow(self.erds_[f_min * c:f_max * c, ch, :], origin="lower",
                        aspect="auto", interpolation="none",
                        cmap=plt.get_cmap("jet_r"),
+                       vmin=-1,
+                       vmax=1.5,
                        extent=[0, self.n_samples_ / self.fs, f_min, f_max])  # FIXME: need to subtract 1 unit from time and freq maximum?
             plt.title(str(ch + 1))
         return fig
