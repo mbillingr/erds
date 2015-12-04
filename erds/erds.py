@@ -115,8 +115,7 @@ class Erds(object):
             stft[time, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
-    def plot(self, channels=None, f_min=0, f_max=30, t_min=0, t_max=None,
-             nrows=None, ncols=None):
+    def plot(self, channels=None, f_min=0, f_max=30, nrows=None, ncols=None):
         """Plot ERDS maps.
 
         Parameters
@@ -141,6 +140,11 @@ class Erds(object):
                        cmap=plt.get_cmap("jet_r"),
                        vmin=-1,
                        vmax=1.5,
-                       extent=[0, self.n_samples_ / self.fs, f_min, f_max])  # FIXME: need to subtract 1 unit from time and freq maximum?
-            plt.title(str(ch + 1))
+                       extent=[0, self.n_samples_ / self.fs, f_min, f_max])
+            plt.title(str(ch + 1), fontweight="bold")
+            if idx >= self.n_channels_ - ncols:  # xlabel only in bottom row
+                plt.xlabel("t (s)", fontsize=10)
+            if idx % ncols == 0:  # ylabel only in left column
+                plt.ylabel("f (Hz)", fontsize=10)
+            plt.tick_params(labelsize=10)
         return fig
