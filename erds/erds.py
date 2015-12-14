@@ -2,6 +2,36 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def bootstrap(x, n_samples=5000, statistic="mean", alpha=0.01):
+    """Compute bootstrap confidence interval estimate of statistic.
+
+    Parameters
+    ----------
+    x : array, shape (n, )
+        One-dimensional input data.
+    n_samples : int
+        Number of bootstrap samples to draw.
+    statistic : str or function
+        Statistic for which bootstrap confidence intervals are computed.
+    alpha : float
+        Significance level.
+
+    Returns
+    -------
+    cl, cu : tuple
+        Lower and upper confidence interval boundaries.
+    """
+    # each bootstrap sample has the same length as the input data
+    samples = np.random.choice(x, (n_samples, len(x)))
+    if statistic == "mean":
+        statistic = np.mean
+    elif statistic == "median":
+        statistic = np.median
+    stat = np.sort(statistic(samples, 1))
+    return (stat[int(alpha/2 * n_samples)],
+            stat[int((1 - alpha/2) * n_samples)])
+
+
 class Erds(object):
     """ERDS maps
 
