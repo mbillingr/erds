@@ -110,10 +110,11 @@ class Erds(object):
         stft = []
         for epoch in range(e):
             stft.append(self._stft(epochs[epoch, :, :]))
-        stft = np.stack(stft, axis=-1).mean(axis=-1)
+        stft = np.stack(stft, axis=0)
 
-        ref = stft[self.baseline_, :, :].mean(axis=0)
-        self.erds_ = (stft / ref - 1).transpose(2, 1, 0)
+        ref = stft[:, self.baseline_, :, :].mean(axis=(0, 1))
+        erds = stft / ref - 1
+        self.erds_ = erds.mean(axis=0).transpose(2, 1, 0)
 
         return self
 
