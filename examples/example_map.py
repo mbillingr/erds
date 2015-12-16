@@ -9,7 +9,7 @@ X = data["X"]
 y = data["y"].squeeze()
 
 maps = erds.Erds(fs=512, baseline=[0.5, 2.5])
-maps.fit(X[y == 0, :, :])
+maps.fit(X[y == 0])
 
 # plt.plot(maps.erds_[:, 0, 10])
 maps.plot()
