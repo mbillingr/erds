@@ -9,11 +9,17 @@ Usage
 -----
 The erds package uses an API similar to the one used in scikit-learn. Here is a simple example demonstrating the basic usage (note that the actual code for loading the data is missing):
 
-    from erds import Erds
+```python
+from erds import Erds
 
-    maps = Erds()
-    maps.fit(data)  # data must be available in appropriate format
-    maps.plot()
+maps = Erds()
+maps.fit(data)  # data must be available in appropriate format
+maps.plot()
+```
+
+Data format
+-----------
+The input data must be organized in a three-dimensional NumPy array with a shape of `(n_epochs, n_channels, n_samples)`. This means that the continuous raw EEG data must be epoched prior to ERDS map calculation.
 
 Examples
 --------
