@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from erds import Erds
 
 
-def load_bncih2020(fname, id):
+def load_bncih2020(fname):
     """Load .mat file from BNCI Horizon 2020 database.
     """
     data = loadmat(fname)
@@ -45,7 +45,7 @@ if not os.path.isfile(fname):
     url = "http://bnci-horizon-2020.eu/database/data-sets/001-2014/" + fname
     fname, headers = urlretrieve(url, fname)
 
-X, y, triggers, fs = load_bncih2020(fname, "2014-001")
+X, y, triggers, fs = load_bncih2020(fname)
 
 labels = {1: "left", 2: "right", 3: "foot", 4: "tongue"}
 
@@ -61,7 +61,7 @@ X_lap = dot_special(lap.T, X)
 
 for label in labels:
     maps = Erds(fs=fs, baseline=[0.5, 1.5])
-    maps.fit(X_lap[y == label, :, :])
+    maps.fit(X_lap[y == label])
     fig = maps.plot(nrows=1, ncols=3)
     fig.suptitle(labels[label])
 
