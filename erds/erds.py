@@ -2,15 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def bootstrap(x, n_samples=5000, statistic="mean", alpha=0.01):
+def bootstrap(x, n_resamples=5000, statistic="mean", alpha=0.01):
     """Compute bootstrap confidence interval estimate of statistic.
 
     Parameters
     ----------
     x : array, shape (n, )
         One-dimensional input data.
-    n_samples : int
-        Number of bootstrap samples to draw.
+    n_resamples : int
+        Number of bootstrap resamples to draw.
     statistic : str or function
         Statistic for which bootstrap confidence intervals are computed.
     alpha : float
@@ -22,14 +22,14 @@ def bootstrap(x, n_samples=5000, statistic="mean", alpha=0.01):
         Lower and upper confidence interval boundaries.
     """
     # each bootstrap sample has the same length as the input data
-    samples = np.random.choice(x, (n_samples, len(x)))
+    samples = np.random.choice(x, (n_resamples, len(x)))
     if statistic == "mean":
         statistic = np.mean
     elif statistic == "median":
         statistic = np.median
     stat = np.sort(statistic(samples, 1))
-    return (stat[int(alpha/2 * n_samples)],
-            stat[int((1 - alpha/2) * n_samples)])
+    return (stat[int(alpha/2 * n_resamples)],
+            stat[int((1 - alpha/2) * n_resamples)])
 
 
 class Erds(object):
@@ -77,13 +77,17 @@ class Erds(object):
 
         return s
 
-    def fit(self, epochs, fs=None):
+    def fit(self, epochs, fs=None, sig=False):
         """Compute ERDS maps.
 
         Parameters
         ----------
         epochs : array, shape (n_epochs, n_channels, n_samples)
             Data used to compute ERDS maps.
+        fs : float
+            Sampling frequency.
+        sig : bool
+            Whether or not to calculate significance mask for ERDS maps.
 
         Returns
         -------
@@ -114,8 +118,18 @@ class Erds(object):
 
         ref = stft[:, self.baseline_, :, :].mean(axis=(0, 1))
         erds = stft / ref - 1
-        self.erds_ = erds.mean(axis=0).transpose(2, 1, 0)
 
+        if sig:
+            lower = np.empty(erds.shape[1:])
+            upper = np.empty(erds.shape[1:])
+            for freq in range(len(self.freqs_)):
+                for chan in range(c):
+                    for time in range(len(self.midpoints_)):
+                        cl, cu = bootstrap(erds[:, time, chan, freq])
+                        lower[time, chan, freq], upper[time, chan, freq] = cl, cu
+            self.cl_ = lower.transpose(2, 1, 0)
+            self.cu_ = upper.transpose(2, 1, 0)
+        self.erds_ = erds.mean(axis=0).transpose(2, 1, 0)
         return self
 
     def _stft(self, x):
@@ -146,7 +160,8 @@ class Erds(object):
             stft[time, :, :] = np.abs(spectrum * np.conj(spectrum))
         return stft
 
-    def plot(self, channels=None, f_min=0, f_max=30, nrows=None, ncols=None):
+    def plot(self, channels=None, f_min=0, f_max=30, nrows=None, ncols=None,
+             sig=True):
         """Plot ERDS maps.
 
         Parameters
@@ -163,14 +178,18 @@ class Erds(object):
         nrows = np.ceil(np.sqrt(self.n_channels_)) if nrows is None else nrows
         ncols = np.ceil(np.sqrt(self.n_channels_)) if ncols is None else ncols
 
+        mask = np.ones(self.erds_.shape)
+        if sig and self.cl_ is not None and self.cu_ is not None:
+            notsig = np.logical_and(self.cl_ < 0, self.cu_ > 0)
+            mask[notsig] = np.nan
+        erds = self.erds_ * mask
+
         fig = plt.figure()
         for idx, ch in enumerate(channels):
             plt.subplot(nrows, ncols, idx + 1)
-            plt.imshow(self.erds_[f_min * c:f_max * c, ch, :], origin="lower",
-                       aspect="auto", interpolation="none",
-                       cmap=plt.get_cmap("jet_r"),
-                       vmin=-1,
-                       vmax=1.5,
+            plt.imshow(erds[f_min * c:f_max * c, ch],
+                       origin="lower", aspect="auto", interpolation="none",
+                       cmap=plt.get_cmap("jet_r"), vmin=-1, vmax=1.5,
                        extent=[0, self.n_samples_ / self.fs, f_min, f_max])
             plt.title(str(ch + 1), fontweight="bold")
             if idx >= self.n_channels_ - ncols:  # xlabel only in bottom row
