@@ -35,6 +35,7 @@ def cut_segments(x2d, tr, start, stop):
     segment = np.arange(start, stop, dtype=int)
     return np.concatenate([x2d[np.newaxis, :, t + segment] for t in tr])
 
+
 def dot_special(x2d, x3d):
     return np.concatenate([x2d.T.dot(x3d[i, ...])[np.newaxis, ...]
                            for i in range(x3d.shape[0])])

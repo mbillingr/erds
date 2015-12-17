@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import norm
+import scipy.stats
 
 
 def bootstrap(x, n_resamples=5000, statistic="mean", alpha=0.01):
@@ -56,7 +56,7 @@ class Erds(object):
         self.erds_ = None
 
     def __repr__(self):
-        s =  "<Erds object>\n"
+        s = "<Erds object>\n"
         s += "  n_times: {}\n".format(self.n_times)
         s += "  n_freqs: {}\n".format(self.n_freqs)
         if self.baseline is None:
@@ -127,7 +127,8 @@ class Erds(object):
                 for chan in range(c):
                     for time in range(len(self.midpoints_)):
                         cl, cu = bootstrap(erds[:, time, chan, freq])
-                        lower[time, chan, freq], upper[time, chan, freq] = cl, cu
+                        lower[time, chan, freq] = cl
+                        upper[time, chan, freq] = cu
             self.cl_ = lower.transpose(2, 1, 0)
             self.cu_ = upper.transpose(2, 1, 0)
         elif sig == "log":
@@ -135,7 +136,7 @@ class Erds(object):
             mean = logerds.mean(axis=0)
             std = logerds.std(axis=0)
             alpha /= np.prod(erds.shape[1:])  # Bonferroni correction
-            ci = norm.ppf(1 - alpha/2) * std / np.sqrt(e)
+            ci = scipy.stats.t.ppf(1 - alpha/2, e - 1) * std / np.sqrt(e)
             lower, upper = np.exp(mean - ci) - 1, np.exp(mean + ci) - 1
             self.cl_ = lower.transpose(2, 1, 0)
             self.cu_ = upper.transpose(2, 1, 0)
