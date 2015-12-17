@@ -3,34 +3,38 @@ import matplotlib.pyplot as plt
 import scipy.stats
 
 
-def bootstrap(x, n_resamples=5000, statistic="mean", alpha=0.01):
+def bootstrap(x, n_resamples=300, statistic="mean", alpha=0.01, axis=0):
     """Compute bootstrap confidence interval estimate of statistic.
 
     Parameters
     ----------
-    x : array, shape (n, )
-        One-dimensional input data.
+    x : array
+        Input data.
     n_resamples : int
         Number of bootstrap resamples to draw.
     statistic : str or function
         Statistic for which bootstrap confidence intervals are computed.
     alpha : float
         Significance level.
+    axis : int
+        Axis over which to draw resamples.
 
     Returns
     -------
     cl, cu : tuple
         Lower and upper confidence interval boundaries.
     """
-    # each bootstrap sample has the same length as the input data
-    samples = np.random.choice(x, (n_resamples, len(x)))
     if statistic == "mean":
         statistic = np.mean
     elif statistic == "median":
         statistic = np.median
-    stat = np.sort(statistic(samples, 1))
-    return (stat[int(alpha/2 * n_resamples)],
-            stat[int((1 - alpha/2) * n_resamples)])
+    mask = [m for i, m in enumerate(x.shape) if i != axis]
+    resamples = np.empty((n_resamples, *mask))
+    for sample in range(n_resamples):
+        idx = np.random.randint(0, x.shape[axis], size=x.shape[axis])
+        resamples[sample] = statistic(np.take(x, idx, axis), axis)
+    stat = np.percentile(resamples, (alpha/2, 1 - alpha/2), axis=0)
+    return stat[0], stat[1]
 
 
 class Erds(object):
@@ -120,26 +124,19 @@ class Erds(object):
         ref = stft[:, self.baseline_, :, :].mean(axis=(0, 1))
         erds = stft / ref - 1
 
+        alpha /= np.prod(erds.shape[1:])  # Bonferroni correction
         if sig == "boot":
-            lower = np.empty(erds.shape[1:])
-            upper = np.empty(erds.shape[1:])
-            for freq in range(len(self.freqs_)):
-                for chan in range(c):
-                    for time in range(len(self.midpoints_)):
-                        cl, cu = bootstrap(erds[:, time, chan, freq])
-                        lower[time, chan, freq] = cl
-                        upper[time, chan, freq] = cu
-            self.cl_ = lower.transpose(2, 1, 0)
-            self.cu_ = upper.transpose(2, 1, 0)
+            cl, cu = bootstrap(erds, alpha=alpha, axis=0)
+            self.cl_ = cl.transpose(2, 1, 0)
+            self.cu_ = cu.transpose(2, 1, 0)
         elif sig == "log":
             logerds = np.log(erds + 1)
             mean = logerds.mean(axis=0)
             std = logerds.std(axis=0)
-            alpha /= np.prod(erds.shape[1:])  # Bonferroni correction
             ci = scipy.stats.t.ppf(1 - alpha/2, e - 1) * std / np.sqrt(e)
-            lower, upper = np.exp(mean - ci) - 1, np.exp(mean + ci) - 1
-            self.cl_ = lower.transpose(2, 1, 0)
-            self.cu_ = upper.transpose(2, 1, 0)
+            cl, cu = np.exp(mean - ci) - 1, np.exp(mean + ci) - 1
+            self.cl_ = cl.transpose(2, 1, 0)
+            self.cu_ = cu.transpose(2, 1, 0)
         self.erds_ = erds.mean(axis=0).transpose(2, 1, 0)
         return self
 
