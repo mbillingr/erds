@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import norm
 
 
 def bootstrap(x, n_resamples=5000, statistic="mean", alpha=0.01):
@@ -77,7 +78,7 @@ class Erds(object):
 
         return s
 
-    def fit(self, epochs, fs=None, sig=False):
+    def fit(self, epochs, fs=None, sig="log", alpha=0.01):
         """Compute ERDS maps.
 
         Parameters
@@ -119,7 +120,7 @@ class Erds(object):
         ref = stft[:, self.baseline_, :, :].mean(axis=(0, 1))
         erds = stft / ref - 1
 
-        if sig:
+        if sig == "boot":
             lower = np.empty(erds.shape[1:])
             upper = np.empty(erds.shape[1:])
             for freq in range(len(self.freqs_)):
@@ -127,6 +128,15 @@ class Erds(object):
                     for time in range(len(self.midpoints_)):
                         cl, cu = bootstrap(erds[:, time, chan, freq])
                         lower[time, chan, freq], upper[time, chan, freq] = cl, cu
+            self.cl_ = lower.transpose(2, 1, 0)
+            self.cu_ = upper.transpose(2, 1, 0)
+        elif sig == "log":
+            logerds = np.log(erds + 1)
+            mean = logerds.mean(axis=0)
+            std = logerds.std(axis=0)
+            alpha /= np.prod(erds.shape[1:])  # Bonferroni correction
+            ci = norm.ppf(1 - alpha/2) * std / np.sqrt(e)
+            lower, upper = np.exp(mean - ci) - 1, np.exp(mean + ci) - 1
             self.cl_ = lower.transpose(2, 1, 0)
             self.cu_ = upper.transpose(2, 1, 0)
         self.erds_ = erds.mean(axis=0).transpose(2, 1, 0)
