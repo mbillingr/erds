@@ -28,8 +28,8 @@ def bootstrap(x, n_resamples=300, statistic="mean", alpha=0.01, axis=0):
         statistic = np.mean
     elif statistic == "median":
         statistic = np.median
-    mask = [m for i, m in enumerate(x.shape) if i != axis]
-    resamples = np.empty((n_resamples, *mask))
+    mask = [n_resamples] + [m for i, m in enumerate(x.shape) if i != axis]
+    resamples = np.empty(mask)
     for sample in range(n_resamples):
         idx = np.random.randint(0, x.shape[axis], size=x.shape[axis])
         resamples[sample] = statistic(np.take(x, idx, axis), axis)
